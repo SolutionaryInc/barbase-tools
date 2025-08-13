@@ -25,6 +25,15 @@ Whether it's writing a new parser, improving an existing tool, or fixing bugs â€
 2. **Create a new branch** for your changes (for example, `feature/my-parser`).
 3. Make your changes or add your new parser/script.
     - **Parser folder naming:** Name your parser folder exactly as the domain you are parsing, and place it inside the `domains` directory (for example, `domains/example.com`).
+    - **Parser save structure** When creating a parser, please ensure that the output data follows this structure:
+```json
+        { 
+        "barcode": "string", 
+        "name": "string", 
+        "image_links": ["url_1", "url_2"] 
+        }
+```
+
 4. **Open a Pull Request (PR)** from your branch to the `main` branch of this repository.
 5. Wait for review and address any feedback.
 
