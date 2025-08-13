@@ -19,6 +19,19 @@ This repo serves as a home for utilities and tooling that support the Barbase ec
 We welcome contributions!  
 Whether it's writing a new parser, improving an existing tool, or fixing bugs — your help is appreciated.
 
+**How to contribute via fork and pull request:**
+
+1. **Fork** this repository to your own GitHub account.
+2. **Create a new branch** for your changes (for example, `feature/my-parser`).
+3. Make your changes or add your new parser/script.
+    - **Parser folder naming:** Name your parser folder exactly as the domain you are parsing, and place it inside the `domains` directory (for example, `domains/example.com`).
+4. **Open a Pull Request (PR)** from your branch to the `main` branch of this repository.
+5. Wait for review and address any feedback.
+
+**Important:**  
+Before you start working, please leave a comment with a link to the source you plan to parse in [Discussions #3](https://github.com/SolutionaryInc/barbase-tools/discussions/3).  
+This helps avoid duplicate work and lets others know which sources are already being processed. Once your PR is merged, the source will be considered completed.
+
 Let's build the most comprehensive open barcode-to-name database together.
 
 ---
