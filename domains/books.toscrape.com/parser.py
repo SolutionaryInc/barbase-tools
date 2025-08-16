@@ -1,0 +1,103 @@
+import requests
+from bs4 import BeautifulSoup
+import json
+from urllib.parse import urljoin
+
+
+def get_info():
+    headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:72.0) Gecko/20100101 Firefox/72.0'}
+    base_url = "https://books.toscrape.com/"
+    results = []
+    
+    for i in range(1, 3):
+        print(f"Parsing {i} page\n<><><><><><>")
+        print()
+
+        url = f"https://books.toscrape.com/catalogue/page-{i}.html"
+        responce = requests.get(url, headers=headers)
+        soup = BeautifulSoup(responce.text, "lxml")
+        
+        # ↓ находим все карточки книг
+        articles = soup.find_all("article", class_ = "product_pod")
+        for article in articles:
+            h3 = article.find("h3")
+            a = h3.find("a")
+            href = a.get("href")
+            product_url = urljoin(url, href)
+            if "/catalogue/" not in product_url:
+                product_url = product_url.replace(
+                    "books.toscrape.com/", "books.toscrape.com/catalogue/", 1
+                )
+             
+            # ↓ Заходим в карточку книги
+            r = requests.get(product_url, headers=headers)
+            r_soup = BeautifulSoup(r.text, "lxml")
+            
+            # ↓ название книги
+            name = r_soup.find("h1").get_text(strip=True)
+            
+            # штрих-код книги (UPC)
+            barcode = ""    
+            table = r_soup.find("table", class_ = "table table-striped")
+            if table:
+                for tr in table.find_all("tr"):
+                    th = tr.find("th")
+                    td = tr.find("td")
+                    if th and td and th.get_text(strip=True) == "UPC":
+                        barcode = td.get_text(strip=True)
+                        break
+            
+            # картинки 
+            images = []  
+            img = r_soup.find("div", id="product_gallery").find("img")
+            if img and img.get("src"):
+                img_url = urljoin(product_url, img["src"])
+                images.append(img_url)
+                
+            results.append({"barcode": barcode, "name": name, "image_links": images})
+            
+    return results
+
+if __name__ == "__main__":
+    data = get_info()
+    print(json.dumps(data, ensure_ascii=False, indent=2))
+            
+            
+         
+        
+        
+        
+        
+        
+   
+
+    
+    
+        
+    
+    
+            
+    
+
+
+
+
+
+    
+    
+    
+    
+    
+    
+        
+    
+    
+    
+
+    
+    
+
+
+
+
+
