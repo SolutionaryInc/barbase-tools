@@ -1,0 +1,41 @@
+import asyncio
+import aiohttp
+from bs4 import BeautifulSoup as BS
+import json
+
+BASE_URL = "https://greenwich-shop.kz/catalog/bytovaya-himiya/"
+HEADERS = {"User-Agent": "Mozilla/5.0"}
+
+async def main():
+    async with aiohttp.ClientSession() as session:
+        async with session.get(BASE_URL, headers=HEADERS, timeout=60) as response:
+            r = await response.text()
+            soup = BS(r, "html.parser")
+
+            items = soup.find_all("div", {"class": "catalog-item"})
+            results = []
+
+            for item in items:
+                title_tag = item.find("a", {"class": "name"})
+                barcode_tag = item.find("div", {"class": "barcode"})
+                price_tag = item.find("span", {"class": "price"})
+
+                title = title_tag.text.strip() if title_tag else "Атауы жоқ"
+                link = title_tag.get("href") if title_tag else ""
+                barcode = barcode_tag.text.strip() if barcode_tag else "Штрихкод жоқ"
+                price = price_tag.text.strip() if price_tag else "Бағасы жоқ"
+
+                results.append({
+                    "title": title,
+                    "price": price,
+                    "barcode": barcode,
+                    "link": link
+                })
+
+            with open("greenwich_products.json", "w", encoding="utf-8") as f:
+                json.dump(results, f, ensure_ascii=False, indent=4)
+
+            print("✅ Мәліметтер greenwich_products.json файлына сақталды")
+
+if __name__ == "__main__":
+    asyncio.run(main())
