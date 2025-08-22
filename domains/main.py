@@ -12,7 +12,15 @@ async def main():
     products = []
 
     async with aiohttp.ClientSession() as session:
-        async with session.get(BASE_URL, headers=HEADERS) as response:
+
+
+async def main():
+    products = []
+    ua = UserAgent()
+
+    async with aiohttp.ClientSession() as session:
+        headers = {"User-Agent": ua.random}
+        async with session.get(BASE_URL, headers=headers) as response:
             html = await response.text()
             soup = BS(html, "html.parser")
 
