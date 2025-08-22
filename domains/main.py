@@ -49,7 +49,35 @@ async def main():
                 products.append({
                     "title": title,
                     "price": price,
-                    "link": link,
+                product_infos.append({
+                    "title": title,
+                    "price": price,
+                    "link": link
+                })
+
+            async def fetch_barcode(session, link):
+                if not link:
+                    return "Штрихкод табылмады"
+                try:
+                    async with session.get(link, headers=HEADERS) as product_response:
+                        product_html = await product_response.text()
+                        product_soup = BS(product_html, "html.parser")
+                        text = product_soup.get_text(" ", strip=True)
+                        match = re.search(r"Штрихкод:\s*(\d+)", text)
+                        if match:
+                            return match.group(1)
+                except Exception:
+                    pass
+                return "Штрихкод табылмады"
+
+            tasks = [fetch_barcode(session, info["link"]) for info in product_infos]
+            barcodes = await asyncio.gather(*tasks)
+
+            for info, barcode in zip(product_infos, barcodes):
+                products.append({
+                    "title": info["title"],
+                    "price": info["price"],
+                    "link": info["link"],
                     "barcode": barcode
                 })
 
