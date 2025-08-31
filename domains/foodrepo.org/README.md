@@ -20,7 +20,6 @@ The parser saves data in JSON format with the following structure:
 2. Install required packages (if not already installed):
 
 ```bash
-
 pip install selenium beautifulsoup4
 ```
 3. Make sure ChromeDriver is installed and the path in parser.py is correct:
@@ -31,7 +30,6 @@ service = Service("C:\\Program Files (x86)\\chromedriver-win64\\chromedriver.exe
 4. Run the parser:
 
 ```bash
-
 python parser.py
 ```
 5. The parser will generate a JSON file foodrepo.json in the same folder.
