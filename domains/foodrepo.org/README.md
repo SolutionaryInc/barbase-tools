@@ -1,6 +1,7 @@
 # Parser for foodrepo.org
 
-This parser collects product data from [foodrepo.org](https://www.foodrepo.org) and outputs it in the format required by the Barbase project.
+This parser collects product data from [foodrepo.org](https://www.foodrepo.org/en/products)
+ and saves it in the format required by the Barbase project.
 
 ## Output format
 
@@ -13,30 +14,44 @@ The parser saves data in JSON format with the following structure:
     "image_links": ["url_1", "url_2"]
 }
 ```
+## Installation & Usage
+### 1. Requirements
+- Python 3.9+
+- Google Chrome browser
 
-## How to run
-1. Make sure you have Python 3 installed.
-
-2. Install required packages (if not already installed):
-
+### 2. Install dependencies
+If you don’t have a requirements.txt, install directly:
 ```bash
-pip install selenium beautifulsoup4
+pip install selenium beautifulsoup4 webdriver-manager
 ```
-3. Make sure ChromeDriver is installed and the path in parser.py is correct:
-
-```python
-service = Service("C:\\Program Files (x86)\\chromedriver-win64\\chromedriver.exe")
-```
-4. Run the parser:
-
+### 3. Run the parser
+#### Windows
 ```bash
 python parser.py
 ```
-5. The parser will generate a JSON file foodrepo.json in the same folder.
+#### macOS / Linux
+```bash
+python3 parser.py
+```
+### 4. Output
+
+The parser will generate a file foodrepo.json in the same folder.
+
+## How it works
+
+- Uses Selenium to render product pages dynamically.
+
+- Collects unique product links.
+
+- Extracts: 
+  - Product name
+  - Product barcode
+  - All image links
+
+- If a barcode is missing, "Not found" is used.
 
 ## Notes
-The parser uses Selenium to load pages dynamically.
 
-All product links are collected without duplicates.
+- No need to manually download ChromeDriver — it is automatically managed by webdriver-manager.
 
-Only products with a barcode are included; if barcode is not found, "Not found" is used.
+- Tested on Windows 10/11, Ubuntu Linux, and macOS Sonoma.
