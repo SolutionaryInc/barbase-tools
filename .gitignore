@@ -137,3 +137,9 @@ dist
 # Vite logs files
 vite.config.js.timestamp-*
 vite.config.ts.timestamp-*
+
+# Selenium / webdriver-manager automatically downloads drivers to this folder.
+# Not needed in the repository, because each developer wdm will create it himself.
+.wdm/
+
+venv
