@@ -1,77 +1,89 @@
-import os
+import cloudscraper
 import json
-from selenium import webdriver
-from selenium.webdriver.chrome.service import Service
-from selenium.webdriver.common.by import By
-from bs4 import BeautifulSoup
-from webdriver_manager.chrome import ChromeDriverManager
-from selenium.webdriver.support.ui import WebDriverWait
-from selenium.webdriver.support import expected_conditions as EC
+import time
+import random
 
-# Driver setup: try env var, else webdriver-manager
-driver_path = os.getenv("CHROMEDRIVER_PATH")
-if driver_path:
-    service = Service(driver_path)
-else:
-    # save drivers in ./ .wdm and disable logging
-    os.environ.setdefault("WDM_LOCAL", "1")
-    os.environ.setdefault("WDM_LOG", "0")
-    service = Service(ChromeDriverManager().install())
+API_KEY = "YOUR_API_KEY" # Insert your API-key here
+BASE_URL = "https://www.foodrepo.org/api/v3/products"
 
-products_data = []
+HEADERS = {
+    "Authorization": f"Token token={API_KEY}",
+    "Accept": "application/json",
+    "User-Agent": "Mozilla/5.0"
+}
 
-with webdriver.Chrome(service=service) as driver:
-    # URL of the page with the list of products
-    base_url = "https://www.foodrepo.org/en/products"
-    driver.get(base_url)
+def fetch_all_products(page_size=100, delay=0.5, max_pages=None, output_file="foodrepo_all.json", lang="en"):
+    scraper = cloudscraper.create_scraper()
+    page = 1
+    all_products = []
+    MAX_RETRIES = 5  # Maximum retry attempts per page if request fails
 
-    # Wait until at least one link to the product appears on the page
-    wait = WebDriverWait(driver, 10)
-    wait.until(EC.presence_of_element_located((By.CSS_SELECTOR, "a[href*='/en/products/']")))
+    while True:
+        params = {
+            "page[number]": page, # current page
+            "page[size]": page_size # number of products per page
+        }
 
-    # Receive HTML
-    soup = BeautifulSoup(driver.page_source, 'html.parser')
-
-    # Find all links to product pages
-    product_links = list(set([a['href'] for a in soup.find_all('a', href=True) if '/en/products/' in a['href']]))
-
-    # Going through each link
-    for link in product_links:
-        product_url = f"https://www.foodrepo.org{link}"
-        driver.get(product_url)
-
-        # Wait of h1 to appear
-        wait.until(EC.presence_of_element_located((By.TAG_NAME, "h1")))
-        product_soup = BeautifulSoup(driver.page_source, 'html.parser')
-
-        # Product name
-        title_tag = product_soup.find('h1')
-        if title_tag:
-            text = title_tag.get_text(strip=True)
-            title_text = text if not text.isdigit() else "Not found"
+        # Request with retries in case of network/Cloudflare issues
+        for attempt in range(MAX_RETRIES):
+            try:
+                response = scraper.get(BASE_URL, headers=HEADERS, params=params, timeout=30)
+                response.raise_for_status() # raise error if status != 200
+                break
+            except Exception as e:
+                print(f"Error on page {page}, attempt {attempt+1}/{MAX_RETRIES}: {e}")
+                time.sleep(3 * (attempt + 1))  # exponential backoff before retry
         else:
-            title_text = "Not found"
+            print(f"Failed to load page {page} after {MAX_RETRIES} retries, stopping.") # if all retries failed
+            break
 
-        # Images
-        img_tags = product_soup.find_all('img', alt=lambda x: x and x.startswith("Image #"))
-        img_urls = [img['src'] for img in img_tags if img.get('src')]
+        # Parse JSON response
+        data = response.json()
+        products = data.get("data", [])
 
-        # Barcode (EAN)
-        barcode_div = product_soup.find('span', class_='font-weight-bold', string='Barcode')
-        if barcode_div and barcode_div.parent:
-            barcode_text = barcode_div.parent.get_text(strip=True).replace('Barcode', '').strip()
-            barcode = barcode_text if barcode_text.isdigit() else 'Not found'
-        else:
-            barcode = 'Not found'
+        if not products:
+            print("No more products.")
+            break
 
-        products_data.append({
-            "barcode": barcode,
-            "name": title_text,
-            "image_links": img_urls
-        })
+        # Extract required fields for each product
+        for product in products:
+            barcode = product.get("barcode") or "Not found"
+            name = product.get("display_name_translations", {}).get(lang) or \
+                   product.get("display_name_translations", {}).get("en", "Not found")
+            raw_images = product.get("images", [])
+            images = [img.get("large") for img in raw_images if "large" in img]
 
-# Save in JSON
-with open("foodrepo.json", "w", encoding="utf-8") as f:
-    json.dump(products_data, f, ensure_ascii=False, indent=4)
+            all_products.append({
+                "barcode": barcode,
+                "name": name,
+                "image_links": images
+            })
 
-print("Data successfully saved in 'foodrepo.json'")
+        print(f"Page {page} loaded ({len(products)} products)")
+
+        # Save progress every 100 pages (backup)
+        if page % 100 == 0:
+            temp_file = f"{output_file.rsplit('.',1)[0]}_part.json"
+            with open(temp_file, "w", encoding="utf-8") as f:
+                json.dump(all_products, f, ensure_ascii=False, indent=2)
+            print(f"Progress saved to {temp_file} (page {page})")
+
+        # Next page
+        page += 1
+        # Randomized delay to reduce chance of getting blocked
+        time.sleep(delay + random.uniform(0, 0.5))
+
+        # Optional limit for debugging
+        if max_pages and page > max_pages:
+            print("Max pages reached.")
+            break
+
+    # Parsed
+    with open(output_file, "w", encoding="utf-8") as f:
+        json.dump(all_products, f, ensure_ascii=False, indent=2)
+
+    print(f"Saved {len(all_products)} products to {output_file}")
+
+# Run the parser
+if __name__ == "__main__":
+    fetch_all_products(page_size=200, delay=1.0, lang="en")

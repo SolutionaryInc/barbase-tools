@@ -1,57 +1,71 @@
-# Parser for foodrepo.org
+# FoodRepo Product Parser
+A Python script for extracting product data from the [FoodRepo API](https://www.foodrepo.org/api-docs/swaggers/v3). It supports Cloudflare bypassing, customizable parameters, and periodic progress saving.
 
-This parser collects product data from [foodrepo.org](https://www.foodrepo.org/en/products)
- and saves it in the format required by the Barbase project.
+## How It Works
+The script sends paginated requests to FoodRepo’s public API and collects product data including:
+- Barcode
+- Product name (with multilingual support)
+- Image URLs (large format only)
 
-## Output format
+Each page can contain up to 200 products, which is the maximum allowed by the API.
 
-The parser saves data in JSON format with the following structure:
-
-```json
-{
-    "barcode": "string",
-    "name": "string",
-    "image_links": ["url_1", "url_2"]
-}
-```
-## Installation & Usage
-### 1. Requirements
-- Python 3.9+
-- Google Chrome browser
-
-### 2. Install dependencies
-If you don’t have a requirements.txt, install directly:
+## Setup Instructions
+1. Install dependencies:
 ```bash
-pip install selenium beautifulsoup4 webdriver-manager
+pip install cloudscraper
 ```
-### 3. Run the parser
-#### Windows
+- Get your API key: Sign up at [FoodRepo](https://www.foodrepo.org/en) and generate your personal API token (on the upper right button - API Keys -> Generate key).
+- Insert your API key: In the script, replace the placeholder:
+```python
+API_KEY = "YOUR_API_KEY" # Insert your API-key here
+```
+
+## How to Run
+To run the script with default settings:
 ```bash
 python parser.py
 ```
-#### macOS / Linux
-```bash
-python3 parser.py
+
+To customize parameters, modify the call like this:
+```python
+# Run the parser
+if __name__ == "__main__":
+    fetch_all_products(page_size=100, delay=0.5, max_pages=None, output_file="foodrepo.json", lang="de")
 ```
-### 4. Output
 
-The parser will generate a file foodrepo.json in the same folder.
+## Customization Options
+`page_size` — Number of products per page (max: 200) `default: 100`
 
-## How it works
+`delay` — Delay between requests (in seconds) `default: 0.5`
 
-- Uses Selenium to render product pages dynamically.
+`max_pages` — Limit total number of pages (useful for testing) `default: None`
 
-- Collects unique product links.
+`lang` — Language for product name ("en", "de", "fr", etc.) `default: "en"`
 
-- Extracts: 
-  - Product name
-  - Product barcode
-  - All image links
+`output_file` — Filename for final JSON output `default: foodrepo_all.json`
 
-- If a barcode is missing, "Not found" is used.
+## Output Format
+Each product is saved as a dictionary with the following structure:
+```json
+{
+    "barcode": "7611654884033",
+    "name": "Naturaplan - Milk chocolate with hazelnuts",
+    "image_links": [
+      "https://d2v5oodgkvnw88.cloudfront.net/uploads_production/image/data/3941/large_myImage.jpg?v=1572355321",
+      "https://d2v5oodgkvnw88.cloudfront.net/uploads_production/image/data/3939/large_myImage.jpg?v=1572355321",
+      "https://d2v5oodgkvnw88.cloudfront.net/uploads_production/image/data/67319/large_myImage.jpg?v=1572355321",
+      "https://d2v5oodgkvnw88.cloudfront.net/uploads_production/image/data/43904/large_myImage.jpg?v=1572354856"
+    ]
+}
+```
 
-## Notes
+## Features
+- Cloudflare bypass via cloudscraper
+- Retry logic with exponential backoff (up to 5 attempts)
+- Auto-save every 100 pages to prevent data loss
+- Multilingual product name support
+- Flexible configuration for automation and debugging
 
-- No need to manually download ChromeDriver — it is automatically managed by webdriver-manager.
-
-- Tested on Windows 10/11, Ubuntu Linux, and macOS Sonoma.
+## Best Practices
+- Keep page_size at or below 200 to comply with API limits.
+- Use a delay of 1.0 seconds or more for large-scale scraping to avoid being blocked (you can try 0.5).
